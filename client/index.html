@@ -1,0 +1,77 @@
+<canvas id="ctx" width ="500" height = "500" style = "border:1px solid #000000;"></canvas>
+
+<div id="chat-text" style = "width:500px; height:100px; overflow-y:scroll">
+	<div>Hello!</div>
+</div>
+
+//need the chat form around the chat input so that
+//if you press enter, it submits the text
+<form id = "chat-form">
+	<input id = "chat-input" type = "text" style = "width:500px"> </input>
+</form>
+
+<script src = "/socket.io/socket.io.js"></script>
+<script>
+	var chatText = document.getElementById("chat-text");
+	var chatInput = document.getElementById("chat-input");
+	var chatForm = document.getElementById("chat-form");
+	var ctx = document.getElementById("ctx").getContext("2d");
+	ctx.font = '30px Arial';
+	var socket = io();
+
+	socket.on('newPositions', function(data) {
+		// ctx.beginPath();
+		ctx.clearRect(0, 0, 500, 500);
+		// ctx.beginPath();
+		for (var i = 0; i < data.length; i++) {
+			ctx.fillText(data[i].number, data[i].x, data[i].y);
+		}
+	});
+
+	socket.on('addToChat', function(data) {
+		chatText.innerHTML += '<div>' + data + '</div>';
+		chatText.scrollTop = chatText.scrollHeight;
+	});
+
+	chatForm.onsubmit = function(e) {
+		//prevents it from refreshing the page
+		e.preventDefault();
+		socket.emit('sendMsgToServer', chatInput.value);
+		chatInput.value = '';
+
+	}
+
+	document.onkeydown = function(event) {
+		//prevents movement if typing in chat :O
+		if (chatInput === document.activeElement) return;
+
+		if (event.keyCode === 68) //d
+			socket.emit('keyPress', {inputId:'right', state: true});
+		else if (event.keyCode === 83) //s
+			socket.emit('keyPress', {inputId:'down', state: true});
+		else if (event.keyCode === 65) //a
+			socket.emit('keyPress', {inputId:'left', state: true});
+		else if (event.keyCode === 87) //w
+			socket.emit('keyPress', {inputId:'up', state: true});
+	}
+
+	document.onkeyup = function(event) {
+		if (chatInput === document.activeElement) return;
+
+		if (event.keyCode === 68) //d
+			socket.emit('keyPress', {inputId:'right', state: false});
+		else if (event.keyCode === 83) //s
+			socket.emit('keyPress', {inputId:'down', state: false});
+		else if (event.keyCode === 65) //a
+			socket.emit('keyPress', {inputId:'left', state: false});
+		else if (event.keyCode === 87) //w
+			socket.emit('keyPress', {inputId:'up', state: false});
+	}
+	
+	//prevents right clicking from working
+	document.oncontextmenu = function(event) {
+		event.preventDefault();
+	}
+</script>
+
+<button onclick = "happy()"> Happy </button>
